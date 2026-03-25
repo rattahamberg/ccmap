@@ -73,8 +73,11 @@ describe('Registry', () => {
     registry.remove('test-1');
     expect(callback).toHaveBeenCalledTimes(3);
 
-    registry.clear();
+    registry.add(makeFeature());
     expect(callback).toHaveBeenCalledTimes(4);
+
+    registry.clear();
+    expect(callback).toHaveBeenCalledTimes(5);
   });
 
   it('unsubscribe stops notifications', () => {
@@ -102,6 +105,34 @@ describe('Registry', () => {
     expect(registry.getAll()).toHaveLength(1);
     expect(registry.get('dup')?.type).toBe('water');
     expect(registry.get('dup')?.style.fill).toBe('#0000ff');
+  });
+
+  it('remove does not notify when id does not exist', () => {
+    const registry = createRegistry();
+    const callback = vi.fn();
+    registry.subscribe(callback);
+    registry.remove('nonexistent');
+    expect(callback).toHaveBeenCalledTimes(0);
+  });
+
+  it('clear does not notify when registry is already empty', () => {
+    const registry = createRegistry();
+    const callback = vi.fn();
+    registry.subscribe(callback);
+    registry.clear();
+    expect(callback).toHaveBeenCalledTimes(0);
+  });
+
+  it('a throwing subscriber does not prevent other subscribers from running', () => {
+    const registry = createRegistry();
+    const first = vi.fn(() => { throw new Error('boom'); });
+    const second = vi.fn();
+    registry.subscribe(first);
+    registry.subscribe(second);
+
+    registry.add(makeFeature());
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
   });
 
   it('clear empties all features', () => {

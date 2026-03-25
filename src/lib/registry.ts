@@ -2,7 +2,7 @@ import type { Feature, FeatureType } from './types';
 
 export interface Registry {
   add(feature: Feature): void;
-  update(id: string, partial: Partial<Feature>): void;
+  update(id: string, partial: Partial<Omit<Feature, 'id'>>): void;
   remove(id: string): void;
   get(id: string): Feature | undefined;
   getAll(): Feature[];
@@ -17,7 +17,11 @@ export function createRegistry(): Registry {
 
   function notify(): void {
     for (const callback of subscribers) {
-      callback();
+      try {
+        callback();
+      } catch (error) {
+        console.error('Registry subscriber callback threw an error:', error);
+      }
     }
   }
 
@@ -27,17 +31,18 @@ export function createRegistry(): Registry {
       notify();
     },
 
-    update(id: string, partial: Partial<Feature>): void {
+    update(id: string, partial: Partial<Omit<Feature, 'id'>>): void {
       const existing = features.get(id);
       if (existing) {
-        features.set(id, { ...existing, ...partial, id });
+        features.set(id, { ...existing, ...partial });
         notify();
       }
     },
 
     remove(id: string): void {
-      features.delete(id);
-      notify();
+      if (features.delete(id)) {
+        notify();
+      }
     },
 
     get(id: string): Feature | undefined {
@@ -53,6 +58,9 @@ export function createRegistry(): Registry {
     },
 
     clear(): void {
+      if (features.size === 0) {
+        return;
+      }
       features.clear();
       notify();
     },
