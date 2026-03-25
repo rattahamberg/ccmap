@@ -77,4 +77,10 @@ describe('generateLandmass', () => {
     expect(() => generateLandmass(defaultParams({ resolution: 2 }))).toThrow();
     expect(() => generateLandmass(defaultParams({ resolution: 3.5 }))).toThrow();
   });
+
+  it('throws on invalid seed', () => {
+    expect(() => generateLandmass(defaultParams({ seed: 1.5 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ seed: NaN }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ seed: Infinity }))).toThrow();
+  });
 });

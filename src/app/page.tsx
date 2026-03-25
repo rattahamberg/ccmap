@@ -45,8 +45,12 @@ export default function Home() {
           Seed
           <input
             type="number"
+            step={1}
             value={seed}
-            onChange={(e) => setSeed(Number(e.target.value))}
+            onChange={(e) => {
+              const num = Number(e.target.value);
+              if (Number.isFinite(num)) setSeed(Math.round(num));
+            }}
             className="bg-gray-800 rounded px-2 py-1 text-gray-100"
           />
         </label>
