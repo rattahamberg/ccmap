@@ -170,6 +170,29 @@ describe('Registry', () => {
     }
   });
 
+  it('external mutation of a returned feature does not affect stored data', () => {
+    const registry = createRegistry();
+    registry.add(makeFeature());
+    const retrieved = registry.get('test-1')!;
+    retrieved.type = 'water';
+    retrieved.style.fill = '#changed';
+
+    const stored = registry.get('test-1')!;
+    expect(stored.type).toBe('land');
+    expect(stored.style.fill).toBe('#2d5016');
+  });
+
+  it('subscriber added during notification is not called in the same cycle', () => {
+    const registry = createRegistry();
+    const late = vi.fn();
+    registry.subscribe(() => {
+      registry.subscribe(late);
+    });
+
+    registry.add(makeFeature());
+    expect(late).toHaveBeenCalledTimes(0);
+  });
+
   it('clear empties all features', () => {
     const registry = createRegistry();
     registry.add(makeFeature({ id: 'a' }));

@@ -16,7 +16,7 @@ export function createRegistry(): Registry {
   const subscribers = new Set<() => void>();
 
   function notify(): void {
-    for (const callback of subscribers) {
+    for (const callback of Array.from(subscribers)) {
       try {
         callback();
       } catch (error) {
@@ -27,7 +27,7 @@ export function createRegistry(): Registry {
 
   return {
     add(feature: Feature): void {
-      features.set(feature.id, feature);
+      features.set(feature.id, structuredClone(feature));
       notify();
     },
 
@@ -48,7 +48,7 @@ export function createRegistry(): Registry {
         // keys already handled above.
         for (const [key, value] of Object.entries(partial)) {
           if (value === undefined) continue;
-          if (key === 'style' || key === 'metadata') continue;
+          if (key === 'id' || key === 'style' || key === 'metadata') continue;
           (updated as Record<string, unknown>)[key] = value;
         }
 
@@ -64,15 +64,18 @@ export function createRegistry(): Registry {
     },
 
     get(id: string): Feature | undefined {
-      return features.get(id);
+      const feature = features.get(id);
+      return feature ? structuredClone(feature) : undefined;
     },
 
     getAll(): Feature[] {
-      return Array.from(features.values());
+      return Array.from(features.values()).map((f) => structuredClone(f));
     },
 
     getByType(type: FeatureType): Feature[] {
-      return Array.from(features.values()).filter((f) => f.type === type);
+      return Array.from(features.values())
+        .filter((f) => f.type === type)
+        .map((f) => structuredClone(f));
     },
 
     clear(): void {
