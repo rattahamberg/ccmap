@@ -28,7 +28,7 @@ export function worldToScreen(point: Point, viewport: Viewport): Point {
 const MIN_SCALE = 1e-10;
 
 export function screenToWorld(point: Point, viewport: Viewport): Point {
-  const scale = Math.max(viewport.scale, MIN_SCALE);
+  const scale = Number.isFinite(viewport.scale) ? Math.max(viewport.scale, MIN_SCALE) : MIN_SCALE;
   return {
     x: (point.x - viewport.offsetX) / scale,
     y: (point.y - viewport.offsetY) / scale,

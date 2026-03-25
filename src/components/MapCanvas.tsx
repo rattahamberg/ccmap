@@ -1,6 +1,6 @@
 'use client';
 
-import type { MouseEvent } from 'react';
+import type { PointerEvent } from 'react';
 import { useLayoutEffect, useRef } from 'react';
 import { CanvasRenderer } from '@/lib/canvas-renderer';
 import type { Registry } from '@/lib/registry';
@@ -13,7 +13,7 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const isPanningRef = useRef(false);
-  const lastMouseRef = useRef({ x: 0, y: 0 });
+  const lastPointerRef = useRef({ x: 0, y: 0 });
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -56,32 +56,34 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
     };
   }, [registry]);
 
-  const handleMouseDown = (e: MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
     isPanningRef.current = true;
-    lastMouseRef.current = { x: e.clientX, y: e.clientY };
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
-  const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
     if (!isPanningRef.current || !rendererRef.current) return;
-    const dx = e.clientX - lastMouseRef.current.x;
-    const dy = e.clientY - lastMouseRef.current.y;
-    lastMouseRef.current = { x: e.clientX, y: e.clientY };
+    const dx = e.clientX - lastPointerRef.current.x;
+    const dy = e.clientY - lastPointerRef.current.y;
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
     rendererRef.current.pan(dx, dy);
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = (e: PointerEvent<HTMLCanvasElement>) => {
     isPanningRef.current = false;
+    e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
   return (
     <div className="absolute inset-0">
       <canvas
         ref={canvasRef}
-        style={{ display: 'block' }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        style={{ display: 'block', touchAction: 'none' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       />
     </div>
   );

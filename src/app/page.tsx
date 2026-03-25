@@ -46,6 +46,12 @@ export default function Home() {
       closed: false,
       style: {},
     });
+
+    return () => {
+      registry.remove('test-land');
+      registry.remove('test-water');
+      registry.remove('test-border');
+    };
   }, [registry]);
 
   return (
