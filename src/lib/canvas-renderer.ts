@@ -116,11 +116,19 @@ export class CanvasRenderer {
   }
 
   resize(width: number, height: number): void {
-    const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
-    this.canvas.style.width = `${width}px`;
-    this.canvas.style.height = `${height}px`;
-    this.canvas.width = width * dpr;
-    this.canvas.height = height * dpr;
+    const rawDpr =
+      typeof window !== 'undefined' && typeof window.devicePixelRatio === 'number'
+        ? window.devicePixelRatio
+        : 1;
+    const dpr = Number.isFinite(rawDpr) && rawDpr > 0 ? rawDpr : 1;
+
+    const safeWidth = Number.isFinite(width) && width > 0 ? Math.round(width) : 0;
+    const safeHeight = Number.isFinite(height) && height > 0 ? Math.round(height) : 0;
+
+    this.canvas.style.width = `${safeWidth}px`;
+    this.canvas.style.height = `${safeHeight}px`;
+    this.canvas.width = Math.max(0, Math.round(safeWidth * dpr));
+    this.canvas.height = Math.max(0, Math.round(safeHeight * dpr));
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.draw();
   }
@@ -130,7 +138,10 @@ export class CanvasRenderer {
   }
 
   setViewport(viewport: Viewport): void {
-    this.viewport = { ...viewport };
+    this.viewport = {
+      ...viewport,
+      scale: Math.max(MIN_SCALE, Number.isFinite(viewport.scale) ? viewport.scale : MIN_SCALE),
+    };
     this.draw();
   }
 
@@ -141,13 +152,22 @@ export class CanvasRenderer {
   }
 
   zoomAtPoint(screenX: number, screenY: number, factor: number): void {
+    // Ignore non-finite or zero zoom factors to avoid corrupting the viewport.
+    if (!Number.isFinite(factor) || factor === 0) {
+      return;
+    }
+
     const worldBefore = screenToWorld(
       { x: screenX, y: screenY },
       this.viewport,
     );
-    this.viewport.scale *= factor;
-    this.viewport.offsetX = screenX - worldBefore.x * this.viewport.scale;
-    this.viewport.offsetY = screenY - worldBefore.y * this.viewport.scale;
+
+    const rawScale = this.viewport.scale * factor;
+    const nextScale = Math.max(MIN_SCALE, rawScale);
+
+    this.viewport.scale = nextScale;
+    this.viewport.offsetX = screenX - worldBefore.x * nextScale;
+    this.viewport.offsetY = screenY - worldBefore.y * nextScale;
     this.draw();
   }
 

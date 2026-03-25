@@ -194,6 +194,75 @@ describe('CanvasRenderer layer order', () => {
   });
 });
 
+describe('CanvasRenderer pan', () => {
+  it('updates viewport offsets and triggers a redraw', () => {
+    const registry = createRegistry();
+    const { canvas, ctx } = createMockCanvas();
+    const renderer = new CanvasRenderer(canvas, registry);
+
+    const drawsBefore = ctx.fillRect.mock.calls.length;
+    const viewportBefore = renderer.getViewport();
+
+    renderer.pan(50, -30);
+
+    const viewportAfter = renderer.getViewport();
+    expect(viewportAfter.offsetX).toBe(viewportBefore.offsetX + 50);
+    expect(viewportAfter.offsetY).toBe(viewportBefore.offsetY - 30);
+    expect(ctx.fillRect.mock.calls.length).toBeGreaterThan(drawsBefore);
+
+    renderer.destroy();
+  });
+});
+
+describe('CanvasRenderer zoomAtPoint', () => {
+  it('keeps the world point under the cursor stationary after zoom', () => {
+    const registry = createRegistry();
+    const { canvas } = createMockCanvas();
+    const renderer = new CanvasRenderer(canvas, registry);
+
+    const screenPoint = { x: 400, y: 300 };
+    const worldBefore = screenToWorld(screenPoint, renderer.getViewport());
+
+    renderer.zoomAtPoint(screenPoint.x, screenPoint.y, 2);
+
+    const worldAfter = screenToWorld(screenPoint, renderer.getViewport());
+    expect(worldAfter.x).toBeCloseTo(worldBefore.x, 10);
+    expect(worldAfter.y).toBeCloseTo(worldBefore.y, 10);
+  });
+
+  it('ignores non-finite zoom factor', () => {
+    const registry = createRegistry();
+    const { canvas, ctx } = createMockCanvas();
+    const renderer = new CanvasRenderer(canvas, registry);
+
+    const drawsBefore = ctx.fillRect.mock.calls.length;
+    const viewportBefore = renderer.getViewport();
+
+    renderer.zoomAtPoint(400, 300, NaN);
+    renderer.zoomAtPoint(400, 300, Infinity);
+    renderer.zoomAtPoint(400, 300, 0);
+
+    expect(renderer.getViewport()).toEqual(viewportBefore);
+    expect(ctx.fillRect.mock.calls.length).toBe(drawsBefore);
+
+    renderer.destroy();
+  });
+
+  it('clamps scale to MIN_SCALE and never goes to zero', () => {
+    const registry = createRegistry();
+    const { canvas } = createMockCanvas();
+    const renderer = new CanvasRenderer(canvas, registry);
+
+    // Zoom out by an extremely small factor
+    renderer.zoomAtPoint(400, 300, 1e-20);
+
+    const viewport = renderer.getViewport();
+    expect(viewport.scale).toBeGreaterThan(0);
+
+    renderer.destroy();
+  });
+});
+
 describe('CanvasRenderer custom styles', () => {
   it('uses feature style overrides instead of defaults', () => {
     const registry = createRegistry();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { CanvasRenderer } from '@/lib/canvas-renderer';
 import type { Registry } from '@/lib/registry';
 
@@ -14,19 +14,18 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
   const isPanningRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const parent = canvas.parentElement;
     if (!parent) return;
 
-    // Initial size
-    canvas.width = parent.clientWidth;
-    canvas.height = parent.clientHeight;
-
     const renderer = new CanvasRenderer(canvas, registry);
     rendererRef.current = renderer;
+
+    // Initial resize through the same high-DPI path used by ResizeObserver
+    renderer.resize(parent.clientWidth, parent.clientHeight);
 
     // Resize observer
     const observer = new ResizeObserver((entries) => {
