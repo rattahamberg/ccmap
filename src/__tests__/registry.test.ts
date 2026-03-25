@@ -28,6 +28,8 @@ describe('Registry', () => {
     registry.update('test-1', { style: { fill: '#ff0000' } });
     const updated = registry.get('test-1');
     expect(updated?.style.fill).toBe('#ff0000');
+    // Deep-merge preserves existing nested fields not included in the partial.
+    expect(updated?.style.stroke).toBe('#1a3009');
     expect(updated?.id).toBe('test-1');
     expect(updated?.type).toBe('land');
   });
@@ -130,9 +132,15 @@ describe('Registry', () => {
     registry.subscribe(first);
     registry.subscribe(second);
 
-    registry.add(makeFeature());
-    expect(first).toHaveBeenCalledTimes(1);
-    expect(second).toHaveBeenCalledTimes(1);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      registry.add(makeFeature());
+      expect(first).toHaveBeenCalledTimes(1);
+      expect(second).toHaveBeenCalledTimes(1);
+      expect(errorSpy).toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it('clear empties all features', () => {
