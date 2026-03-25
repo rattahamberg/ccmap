@@ -2,18 +2,24 @@
 
 import type { PointerEvent } from 'react';
 import { useLayoutEffect, useRef } from 'react';
-import { CanvasRenderer } from '@/lib/canvas-renderer';
+import { CanvasRenderer, screenToWorld } from '@/lib/canvas-renderer';
 import type { Registry } from '@/lib/registry';
 
 interface MapCanvasProps {
   registry: Registry;
+  onCanvasClick?: (worldX: number, worldY: number) => void;
 }
 
-export default function MapCanvas({ registry }: MapCanvasProps) {
+const CLICK_THRESHOLD = 5; // pixels — movement below this is a click, not a drag
+
+export default function MapCanvas({ registry, onCanvasClick }: MapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const isPanningRef = useRef(false);
   const lastPointerRef = useRef({ x: 0, y: 0 });
+  const pointerDownPosRef = useRef({ x: 0, y: 0 });
+  const onCanvasClickRef = useRef(onCanvasClick);
+  onCanvasClickRef.current = onCanvasClick;
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -59,6 +65,7 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
   const handlePointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
     isPanningRef.current = true;
     lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -71,6 +78,27 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
   };
 
   const handlePointerUp = (e: PointerEvent<HTMLCanvasElement>) => {
+    isPanningRef.current = false;
+
+    // Detect click (minimal movement since pointer down)
+    const dx = e.clientX - pointerDownPosRef.current.x;
+    const dy = e.clientY - pointerDownPosRef.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < CLICK_THRESHOLD && onCanvasClickRef.current && rendererRef.current) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const world = screenToWorld({ x: screenX, y: screenY }, rendererRef.current.getViewport());
+      onCanvasClickRef.current(world.x, world.y);
+    }
+
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  const handlePointerCancel = (e: PointerEvent<HTMLCanvasElement>) => {
     isPanningRef.current = false;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
@@ -85,7 +113,7 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       />
     </div>
   );
