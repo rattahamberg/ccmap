@@ -1,16 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import MapCanvas from '@/components/MapCanvas';
 import { createRegistry } from '@/lib/registry';
-import type { Registry } from '@/lib/registry';
 
 export default function Home() {
-  const registryRef = useRef<Registry | null>(null);
-  if (!registryRef.current) {
-    registryRef.current = createRegistry();
-  }
-  const registry = registryRef.current;
+  const registry = useMemo(() => createRegistry(), []);
 
   useEffect(() => {
     // Land polygon — green triangle
