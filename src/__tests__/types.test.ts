@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { Feature, FeatureType, Point, FeatureStyle } from '@/lib/types';
+import type { Feature, FeatureType } from '@/lib/types';
+
+// Runtime import to verify @/* path alias resolves correctly
+import '@/lib/types';
 
 describe('Shared types', () => {
   it('can create a valid Feature', () => {
