@@ -65,7 +65,7 @@ export function generateLandmass(params: TerrainParams, id?: string): Feature {
     const nx = Math.cos(theta) * noiseFrequency;
     const ny = Math.sin(theta) * noiseFrequency;
     const n = noise2D(nx, ny); // range [-1, 1]
-    const r = radius + n * noiseAmplitude * radius;
+    const r = Math.max(0, radius + n * noiseAmplitude * radius);
     geometry.push({
       x: centerX + r * Math.cos(theta),
       y: centerY + r * Math.sin(theta),
