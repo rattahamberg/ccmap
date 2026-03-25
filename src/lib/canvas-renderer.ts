@@ -25,10 +25,13 @@ export function worldToScreen(point: Point, viewport: Viewport): Point {
   };
 }
 
+const MIN_SCALE = 1e-10;
+
 export function screenToWorld(point: Point, viewport: Viewport): Point {
+  const scale = Math.max(viewport.scale, MIN_SCALE);
   return {
-    x: (point.x - viewport.offsetX) / viewport.scale,
-    y: (point.y - viewport.offsetY) / viewport.scale,
+    x: (point.x - viewport.offsetX) / scale,
+    y: (point.y - viewport.offsetY) / scale,
   };
 }
 
@@ -58,9 +61,23 @@ export class CanvasRenderer {
     ctx.fillStyle = BACKGROUND_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Fetch all features once and group by type to avoid
+    // repeated full scans and cloning in the registry.
+    const allFeatures = this.registry.getAll();
+    const byType = new Map<FeatureType, Feature[]>();
+    for (const feature of allFeatures) {
+      let group = byType.get(feature.type);
+      if (!group) {
+        group = [];
+        byType.set(feature.type, group);
+      }
+      group.push(feature);
+    }
+
     // Draw features in layer order
     for (const type of LAYER_ORDER) {
-      const features = this.registry.getByType(type);
+      const features = byType.get(type);
+      if (!features) continue;
       for (const feature of features) {
         this.renderFeature(feature);
       }
@@ -99,8 +116,12 @@ export class CanvasRenderer {
   }
 
   resize(width: number, height: number): void {
-    this.canvas.width = width;
-    this.canvas.height = height;
+    const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.draw();
   }
 

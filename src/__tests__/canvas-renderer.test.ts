@@ -3,7 +3,6 @@ import {
   worldToScreen,
   screenToWorld,
   CanvasRenderer,
-  LAYER_ORDER,
   DEFAULT_STYLES,
 } from '@/lib/canvas-renderer';
 import { createRegistry } from '@/lib/registry';
@@ -101,6 +100,7 @@ function createMockCanvas() {
     closePath: vi.fn(),
     fill: vi.fn(),
     stroke: vi.fn(),
+    setTransform: vi.fn(),
     _fillStyle: '',
     _strokeStyle: '',
     _lineWidth: 1,
@@ -130,6 +130,7 @@ function createMockCanvas() {
   const canvas = {
     width: 800,
     height: 600,
+    style: {} as CSSStyleDeclaration,
     getContext: vi.fn().mockReturnValue(ctx),
   } as unknown as HTMLCanvasElement;
 
