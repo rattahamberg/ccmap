@@ -34,14 +34,22 @@ export function createRegistry(): Registry {
     update(id: string, partial: Partial<Omit<Feature, 'id'>>): void {
       const existing = features.get(id);
       if (existing) {
-        const updated: Feature = { ...existing, ...partial };
+        const updated: Feature = { ...existing };
 
         // Shallow-merge known nested objects so partial updates don't drop sibling fields.
-        if (partial.style) {
+        if (partial.style !== undefined) {
           updated.style = { ...existing.style, ...partial.style };
         }
-        if (partial.metadata) {
+        if (partial.metadata !== undefined) {
           updated.metadata = { ...existing.metadata, ...partial.metadata };
+        }
+
+        // Apply remaining defined fields, skipping undefined values and
+        // keys already handled above.
+        for (const [key, value] of Object.entries(partial)) {
+          if (value === undefined) continue;
+          if (key === 'style' || key === 'metadata') continue;
+          (updated as Record<string, unknown>)[key] = value;
         }
 
         features.set(id, updated);

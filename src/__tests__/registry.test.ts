@@ -34,6 +34,24 @@ describe('Registry', () => {
     expect(updated?.type).toBe('land');
   });
 
+  it('update ignores undefined values and does not clobber required fields', () => {
+    const registry = createRegistry();
+    const original = makeFeature();
+    registry.add(original);
+
+    // Simulate runtime misuse where undefined is passed for required fields.
+    registry.update(
+      'test-1',
+      { type: undefined, style: undefined } as unknown as Partial<Omit<Feature, 'id'>>,
+    );
+
+    const updated = registry.get('test-1');
+    expect(updated).toBeDefined();
+    expect(updated?.id).toBe(original.id);
+    expect(updated?.type).toBe(original.type);
+    expect(updated?.style).toEqual(original.style);
+  });
+
   it('update shallow-merges metadata without dropping existing fields', () => {
     const registry = createRegistry();
     const feature = makeFeature({ metadata: { region: 'north', population: 100 } });
