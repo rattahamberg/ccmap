@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateLandmass, TerrainParams } from '@/lib/terrain-gen';
+import { generateLandmass } from '@/lib/terrain-gen';
+import type { TerrainParams } from '@/lib/terrain-gen';
 
 function defaultParams(overrides: Partial<TerrainParams> = {}): TerrainParams {
   return {
@@ -64,5 +65,16 @@ describe('generateLandmass', () => {
     const a = generateLandmass(params);
     const b = generateLandmass(params);
     expect(a.geometry).toEqual(b.geometry);
+  });
+
+  it('throws on invalid radius', () => {
+    expect(() => generateLandmass(defaultParams({ radius: 0 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ radius: -10 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ radius: Infinity }))).toThrow();
+  });
+
+  it('throws on invalid resolution', () => {
+    expect(() => generateLandmass(defaultParams({ resolution: 2 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ resolution: 3.5 }))).toThrow();
   });
 });

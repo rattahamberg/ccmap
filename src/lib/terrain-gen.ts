@@ -24,6 +24,8 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+let landCounter = 0;
+
 export function generateLandmass(params: TerrainParams): Feature {
   const {
     seed,
@@ -34,6 +36,13 @@ export function generateLandmass(params: TerrainParams): Feature {
     noiseFrequency,
     resolution,
   } = params;
+
+  if (!Number.isFinite(radius) || radius <= 0) {
+    throw new Error('radius must be a positive finite number');
+  }
+  if (!Number.isInteger(resolution) || resolution < 3) {
+    throw new Error('resolution must be an integer >= 3');
+  }
 
   const noise2D = createNoise2D(mulberry32(seed));
   const geometry: Point[] = [];
@@ -51,7 +60,7 @@ export function generateLandmass(params: TerrainParams): Feature {
   }
 
   return {
-    id: `land-${seed}-${Date.now()}`,
+    id: `land-${seed}-${++landCounter}`,
     type: 'land',
     geometry,
     closed: true,
