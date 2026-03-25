@@ -98,6 +98,13 @@ export default function MapCanvas({ registry, onCanvasClick }: MapCanvasProps) {
     }
   };
 
+  const handlePointerCancel = (e: PointerEvent<HTMLCanvasElement>) => {
+    isPanningRef.current = false;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
   return (
     <div className="absolute inset-0">
       <canvas
@@ -106,7 +113,7 @@ export default function MapCanvas({ registry, onCanvasClick }: MapCanvasProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       />
     </div>
   );

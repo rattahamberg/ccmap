@@ -1,5 +1,6 @@
 import { createNoise2D } from 'simplex-noise';
 import type { Feature, Point } from './types';
+import { mulberry32 } from './prng';
 
 export interface BorderNoiseParams {
   amplitude: number;
@@ -7,19 +8,6 @@ export interface BorderNoiseParams {
   octaves: number;
   seed: number;
   subdivisions: number;
-}
-
-/**
- * Mulberry32 seeded PRNG — returns a function producing floats in [0, 1).
- */
-function mulberry32(seed: number): () => number {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 export function processBorderLine(
@@ -31,6 +19,13 @@ export function processBorderLine(
 
   if (controlPoints.length < 2) {
     throw new Error('At least 2 control points are required');
+  }
+
+  for (let i = 0; i < controlPoints.length; i++) {
+    const pt = controlPoints[i];
+    if (!Number.isFinite(pt.x) || !Number.isFinite(pt.y)) {
+      throw new Error(`Control point at index ${i} has non-finite coordinates`);
+    }
   }
   if (!Number.isFinite(seed) || !Number.isInteger(seed)) {
     throw new Error('seed must be a finite integer');
@@ -77,18 +72,26 @@ export function processBorderLine(
   if (amplitude > 0) {
     const noise2D = createNoise2D(mulberry32(seed));
 
+    // Precompute nearest original control point indices for each point
+    const prevOriginalIndex: number[] = new Array(subdivided.length);
+    let lastOrig = -1;
+    for (let i = 0; i < subdivided.length; i++) {
+      if (isOriginal[i]) lastOrig = i;
+      prevOriginalIndex[i] = lastOrig >= 0 ? lastOrig : 0;
+    }
+
+    const nextOriginalIndex: number[] = new Array(subdivided.length);
+    let nextOrig = -1;
+    for (let i = subdivided.length - 1; i >= 0; i--) {
+      if (isOriginal[i]) nextOrig = i;
+      nextOriginalIndex[i] = nextOrig >= 0 ? nextOrig : subdivided.length - 1;
+    }
+
     for (let i = 0; i < subdivided.length; i++) {
       if (isOriginal[i]) continue;
 
-      // Find the surrounding original control points for perpendicular direction
-      // Walk backward to find previous original, forward to find next original
-      let prevOrigIdx = i - 1;
-      while (prevOrigIdx >= 0 && !isOriginal[prevOrigIdx]) prevOrigIdx--;
-      let nextOrigIdx = i + 1;
-      while (nextOrigIdx < subdivided.length && !isOriginal[nextOrigIdx]) nextOrigIdx++;
-
-      if (prevOrigIdx < 0) prevOrigIdx = 0;
-      if (nextOrigIdx >= subdivided.length) nextOrigIdx = subdivided.length - 1;
+      const prevOrigIdx = prevOriginalIndex[i];
+      const nextOrigIdx = nextOriginalIndex[i];
 
       const segA = subdivided[prevOrigIdx];
       const segB = subdivided[nextOrigIdx];

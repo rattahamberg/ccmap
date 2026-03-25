@@ -37,7 +37,12 @@ export default function Home() {
 
   // Update border preview whenever params or control points change
   useEffect(() => {
-    if (mode !== 'border') return;
+    if (mode !== 'border') {
+      // Clean up preview when leaving border mode
+      registry.remove(BORDER_PREVIEW_ID);
+      setError(null);
+      return;
+    }
 
     if (controlPoints.length < 2) {
       // Remove preview if fewer than 2 points
