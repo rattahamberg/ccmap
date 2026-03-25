@@ -230,7 +230,7 @@ describe('CanvasRenderer zoomAtPoint', () => {
     expect(worldAfter.y).toBeCloseTo(worldBefore.y, 10);
   });
 
-  it('ignores non-finite zoom factor', () => {
+  it('ignores non-finite and non-positive zoom factors', () => {
     const registry = createRegistry();
     const { canvas, ctx } = createMockCanvas();
     const renderer = new CanvasRenderer(canvas, registry);
@@ -241,6 +241,8 @@ describe('CanvasRenderer zoomAtPoint', () => {
     renderer.zoomAtPoint(400, 300, NaN);
     renderer.zoomAtPoint(400, 300, Infinity);
     renderer.zoomAtPoint(400, 300, 0);
+    renderer.zoomAtPoint(400, 300, -1);
+    renderer.zoomAtPoint(400, 300, -0.5);
 
     expect(renderer.getViewport()).toEqual(viewportBefore);
     expect(ctx.fillRect.mock.calls.length).toBe(drawsBefore);

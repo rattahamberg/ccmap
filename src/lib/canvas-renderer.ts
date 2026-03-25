@@ -152,8 +152,8 @@ export class CanvasRenderer {
   }
 
   zoomAtPoint(screenX: number, screenY: number, factor: number): void {
-    // Ignore non-finite or zero zoom factors to avoid corrupting the viewport.
-    if (!Number.isFinite(factor) || factor === 0) {
+    // Ignore non-finite or non-positive zoom factors to avoid corrupting the viewport.
+    if (!Number.isFinite(factor) || factor <= 0) {
       return;
     }
 
