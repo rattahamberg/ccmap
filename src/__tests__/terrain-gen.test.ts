@@ -1,0 +1,108 @@
+import { describe, it, expect } from 'vitest';
+import { generateLandmass } from '@/lib/terrain-gen';
+import type { TerrainParams } from '@/lib/terrain-gen';
+
+function defaultParams(overrides: Partial<TerrainParams> = {}): TerrainParams {
+  return {
+    seed: 42,
+    centerX: 400,
+    centerY: 300,
+    radius: 150,
+    noiseAmplitude: 0.3,
+    noiseFrequency: 2,
+    resolution: 128,
+    ...overrides,
+  };
+}
+
+describe('generateLandmass', () => {
+  it('returns a valid Feature with type land and closed true', () => {
+    const result = generateLandmass(defaultParams());
+    expect(result.type).toBe('land');
+    expect(result.closed).toBe(true);
+    expect(result.id).toMatch(/^land-/);
+    expect(Array.isArray(result.geometry)).toBe(true);
+    expect(result.geometry.length).toBeGreaterThan(0);
+  });
+
+  it('geometry length matches the resolution param', () => {
+    const r64 = generateLandmass(defaultParams({ resolution: 64 }));
+    expect(r64.geometry).toHaveLength(64);
+
+    const r200 = generateLandmass(defaultParams({ resolution: 200 }));
+    expect(r200.geometry).toHaveLength(200);
+  });
+
+  it('changing seed produces different geometry', () => {
+    const a = generateLandmass(defaultParams({ seed: 1 }));
+    const b = generateLandmass(defaultParams({ seed: 2 }));
+
+    // At least one point must differ
+    const hasDifference = a.geometry.some(
+      (pt, i) => pt.x !== b.geometry[i].x || pt.y !== b.geometry[i].y,
+    );
+    expect(hasDifference).toBe(true);
+  });
+
+  it('amplitude 0 produces a near-perfect circle', () => {
+    const params = defaultParams({
+      noiseAmplitude: 0,
+      centerX: 0,
+      centerY: 0,
+      radius: 100,
+    });
+    const result = generateLandmass(params);
+    const tolerance = params.radius * 0.01; // 1%
+
+    for (const pt of result.geometry) {
+      const dist = Math.sqrt(pt.x * pt.x + pt.y * pt.y);
+      expect(Math.abs(dist - params.radius)).toBeLessThanOrEqual(tolerance);
+    }
+  });
+
+  it('same seed and same params produce identical output', () => {
+    const params = defaultParams();
+    const a = generateLandmass(params);
+    const b = generateLandmass(params);
+    expect(a.geometry).toEqual(b.geometry);
+  });
+
+  it('throws on invalid radius', () => {
+    expect(() => generateLandmass(defaultParams({ radius: 0 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ radius: -10 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ radius: Infinity }))).toThrow();
+  });
+
+  it('throws on invalid resolution', () => {
+    expect(() => generateLandmass(defaultParams({ resolution: 2 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ resolution: 3.5 }))).toThrow();
+  });
+
+  it('throws on invalid seed', () => {
+    expect(() => generateLandmass(defaultParams({ seed: 1.5 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ seed: NaN }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ seed: Infinity }))).toThrow();
+  });
+
+  it('throws on seed outside 32-bit range', () => {
+    expect(() => generateLandmass(defaultParams({ seed: 2147483648 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ seed: -2147483649 }))).toThrow();
+  });
+
+  it('uses caller-provided id when given', () => {
+    const result = generateLandmass(defaultParams(), 'my-custom-id');
+    expect(result.id).toBe('my-custom-id');
+  });
+
+  it('throws on non-finite center coordinates', () => {
+    expect(() => generateLandmass(defaultParams({ centerX: NaN }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ centerY: Infinity }))).toThrow();
+  });
+
+  it('throws on invalid noiseAmplitude or noiseFrequency', () => {
+    expect(() => generateLandmass(defaultParams({ noiseAmplitude: -0.1 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ noiseAmplitude: NaN }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ noiseFrequency: 0 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ noiseFrequency: -1 }))).toThrow();
+  });
+});
