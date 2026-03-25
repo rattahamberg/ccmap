@@ -28,10 +28,19 @@ describe('Registry', () => {
     registry.update('test-1', { style: { fill: '#ff0000' } });
     const updated = registry.get('test-1');
     expect(updated?.style.fill).toBe('#ff0000');
-    // Deep-merge preserves existing nested fields not included in the partial.
+    // Shallow-merge preserves existing nested fields not included in the partial.
     expect(updated?.style.stroke).toBe('#1a3009');
     expect(updated?.id).toBe('test-1');
     expect(updated?.type).toBe('land');
+  });
+
+  it('update shallow-merges metadata without dropping existing fields', () => {
+    const registry = createRegistry();
+    const feature = makeFeature({ metadata: { region: 'north', population: 100 } });
+    registry.add(feature);
+    registry.update('test-1', { metadata: { population: 200, climate: 'temperate' } });
+    const updated = registry.get('test-1');
+    expect(updated?.metadata).toEqual({ region: 'north', population: 200, climate: 'temperate' });
   });
 
   it('remove deletes a feature', () => {

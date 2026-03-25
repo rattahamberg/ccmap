@@ -36,7 +36,7 @@ export function createRegistry(): Registry {
       if (existing) {
         const updated: Feature = { ...existing, ...partial };
 
-        // Deep-merge known nested objects so partial updates don't drop fields.
+        // Shallow-merge known nested objects so partial updates don't drop sibling fields.
         if (partial.style) {
           updated.style = { ...existing.style, ...partial.style };
         }
