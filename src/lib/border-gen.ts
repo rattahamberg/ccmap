@@ -46,7 +46,7 @@ export function processBorderLine(
     throw new Error('subdivisions must be an integer >= 1');
   }
 
-  // Step 1: Subdivide — insert midpoints between each consecutive pair
+  // Step 1: Subdivide — insert evenly spaced interior points between each consecutive pair
   const subdivided: Point[] = [];
   const isOriginal: boolean[] = [];
 

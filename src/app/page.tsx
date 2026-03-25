@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import MapCanvas from '@/components/MapCanvas';
 import { createRegistry } from '@/lib/registry';
 import { generateLandmass } from '@/lib/terrain-gen';
@@ -32,8 +32,7 @@ export default function Home() {
   const [borderOctaves, setBorderOctaves] = useState(2);
   const [borderSubdivisions, setBorderSubdivisions] = useState(8);
 
-  // Track control point dot features so we can clean them up
-  const controlPointIdsRef = useRef<string[]>([]);
+  const CP_DOTS_ID = '__cp-dots__';
 
   // Update border preview whenever params or control points change
   useEffect(() => {
@@ -78,39 +77,33 @@ export default function Home() {
     registry,
   ]);
 
-  // Render control point dots as small features in the registry
+  // Render all control point dots as a single feature to avoid O(N) redraws
   useEffect(() => {
-    // Remove old dots
-    for (const id of controlPointIdsRef.current) {
-      registry.remove(id);
-    }
-
-    if (mode !== 'border') {
-      controlPointIdsRef.current = [];
+    if (mode !== 'border' || controlPoints.length === 0) {
+      registry.remove(CP_DOTS_ID);
       return;
     }
 
-    const newIds: string[] = [];
-    for (let i = 0; i < controlPoints.length; i++) {
-      const pt = controlPoints[i];
-      const dotId = `__cp-dot-${i}__`;
-      const dotSize = 4;
-      // Small diamond shape around the point
-      registry.add({
-        id: dotId,
-        type: 'border',
-        geometry: [
-          { x: pt.x - dotSize, y: pt.y },
-          { x: pt.x, y: pt.y - dotSize },
-          { x: pt.x + dotSize, y: pt.y },
-          { x: pt.x, y: pt.y + dotSize },
-        ],
-        closed: true,
-        style: { fill: '#ffffff', stroke: '#ffffff', strokeWidth: 1 },
-      });
-      newIds.push(dotId);
+    const dotSize = 4;
+    const geometry: Point[] = [];
+    for (const pt of controlPoints) {
+      // Diamond shape per point — closed polygon segments concatenated
+      geometry.push(
+        { x: pt.x - dotSize, y: pt.y },
+        { x: pt.x, y: pt.y - dotSize },
+        { x: pt.x + dotSize, y: pt.y },
+        { x: pt.x, y: pt.y + dotSize },
+        { x: pt.x - dotSize, y: pt.y }, // close back to start
+      );
     }
-    controlPointIdsRef.current = newIds;
+
+    registry.add({
+      id: CP_DOTS_ID,
+      type: 'border',
+      geometry,
+      closed: true,
+      style: { fill: '#ffffff', stroke: '#ffffff', strokeWidth: 1 },
+    });
   }, [mode, controlPoints, registry]);
 
   const handleGenerate = () => {
@@ -148,21 +141,31 @@ export default function Home() {
   const handleClearBorder = () => {
     setControlPoints([]);
     registry.remove(BORDER_PREVIEW_ID);
-    // Control point dots are cleaned up by the useEffect
+    registry.remove(CP_DOTS_ID);
   };
 
   const handleFinishBorder = () => {
     if (controlPoints.length < 2) return;
-    // The preview feature is already in the registry — give it a permanent ID
-    const preview = registry.get(BORDER_PREVIEW_ID);
-    if (preview) {
+    // Generate the final border synchronously from current params to avoid
+    // race conditions with the useEffect preview update
+    try {
+      const feature = processBorderLine(
+        controlPoints,
+        {
+          amplitude: borderAmplitude,
+          frequency: borderFrequency,
+          octaves: borderOctaves,
+          seed: borderSeed,
+          subdivisions: borderSubdivisions,
+        },
+        `border-${borderSeed}-${crypto.randomUUID()}`,
+      );
       registry.remove(BORDER_PREVIEW_ID);
-      registry.add({
-        ...preview,
-        id: `border-${borderSeed}-${crypto.randomUUID()}`,
-      });
+      registry.add(feature);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      return;
     }
-    // Clear control points and dots
     setControlPoints([]);
   };
 
