@@ -12,18 +12,24 @@ export default function Home() {
   const [radius, setRadius] = useState(150);
   const [noiseAmplitude, setNoiseAmplitude] = useState(0.3);
   const [noiseFrequency, setNoiseFrequency] = useState(2);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = () => {
-    const feature = generateLandmass({
-      seed,
-      centerX: 400,
-      centerY: 300,
-      radius,
-      noiseAmplitude,
-      noiseFrequency,
-      resolution: 128,
-    });
-    registry.add(feature);
+    try {
+      const feature = generateLandmass({
+        seed,
+        centerX: 400,
+        centerY: 300,
+        radius,
+        noiseAmplitude,
+        noiseFrequency,
+        resolution: 128,
+      });
+      registry.add(feature);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const handleClear = () => {
@@ -92,6 +98,10 @@ export default function Home() {
             onChange={(e) => setNoiseFrequency(Number(e.target.value))}
           />
         </label>
+
+        {error && (
+          <p className="text-red-400 text-sm bg-red-900/30 rounded px-2 py-1">{error}</p>
+        )}
 
         <button
           onClick={handleGenerate}
