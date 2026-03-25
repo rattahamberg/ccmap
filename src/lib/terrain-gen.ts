@@ -44,6 +44,15 @@ export function generateLandmass(params: TerrainParams): Feature {
   if (!Number.isInteger(resolution) || resolution < 3) {
     throw new Error('resolution must be an integer >= 3');
   }
+  if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) {
+    throw new Error('centerX and centerY must be finite numbers');
+  }
+  if (!Number.isFinite(noiseAmplitude) || noiseAmplitude < 0) {
+    throw new Error('noiseAmplitude must be a non-negative finite number');
+  }
+  if (!Number.isFinite(noiseFrequency) || noiseFrequency <= 0) {
+    throw new Error('noiseFrequency must be a positive finite number');
+  }
 
   const noise2D = createNoise2D(mulberry32(seed));
   const geometry: Point[] = [];

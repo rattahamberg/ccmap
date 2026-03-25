@@ -48,8 +48,10 @@ export default function Home() {
             step={1}
             value={seed}
             onChange={(e) => {
-              const num = Number(e.target.value);
-              if (Number.isFinite(num)) setSeed(Math.round(num));
+              const num = e.currentTarget.valueAsNumber;
+              if (!Number.isNaN(num) && Number.isFinite(num)) {
+                setSeed(Math.round(num));
+              }
             }}
             className="bg-gray-800 rounded px-2 py-1 text-gray-100"
           />

@@ -83,4 +83,16 @@ describe('generateLandmass', () => {
     expect(() => generateLandmass(defaultParams({ seed: NaN }))).toThrow();
     expect(() => generateLandmass(defaultParams({ seed: Infinity }))).toThrow();
   });
+
+  it('throws on non-finite center coordinates', () => {
+    expect(() => generateLandmass(defaultParams({ centerX: NaN }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ centerY: Infinity }))).toThrow();
+  });
+
+  it('throws on invalid noiseAmplitude or noiseFrequency', () => {
+    expect(() => generateLandmass(defaultParams({ noiseAmplitude: -0.1 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ noiseAmplitude: NaN }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ noiseFrequency: 0 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ noiseFrequency: -1 }))).toThrow();
+  });
 });
