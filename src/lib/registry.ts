@@ -52,7 +52,7 @@ export function createRegistry(): Registry {
           (updated as Record<string, unknown>)[key] = value;
         }
 
-        features.set(id, updated);
+        features.set(id, structuredClone(updated));
         notify();
       }
     },

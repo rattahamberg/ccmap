@@ -182,6 +182,19 @@ describe('Registry', () => {
     expect(stored.style.fill).toBe('#2d5016');
   });
 
+  it('external mutation of update() input does not affect stored data', () => {
+    const registry = createRegistry();
+    registry.add(makeFeature());
+    const geometry = [{ x: 10, y: 20 }, { x: 30, y: 40 }];
+    registry.update('test-1', { geometry });
+    geometry[0].x = 999;
+    geometry.push({ x: 50, y: 60 });
+
+    const stored = registry.get('test-1')!;
+    expect(stored.geometry[0].x).toBe(10);
+    expect(stored.geometry).toHaveLength(2);
+  });
+
   it('subscriber added during notification is not called in the same cycle', () => {
     const registry = createRegistry();
     const late = vi.fn();
