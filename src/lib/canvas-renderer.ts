@@ -165,9 +165,21 @@ export class CanvasRenderer {
     const rawScale = this.viewport.scale * factor;
     const nextScale = Math.max(MIN_SCALE, rawScale);
 
+    // Bail out if the result overflowed to non-finite values
+    if (!Number.isFinite(nextScale)) {
+      return;
+    }
+
+    const newOffsetX = screenX - worldBefore.x * nextScale;
+    const newOffsetY = screenY - worldBefore.y * nextScale;
+
+    if (!Number.isFinite(newOffsetX) || !Number.isFinite(newOffsetY)) {
+      return;
+    }
+
     this.viewport.scale = nextScale;
-    this.viewport.offsetX = screenX - worldBefore.x * nextScale;
-    this.viewport.offsetY = screenY - worldBefore.y * nextScale;
+    this.viewport.offsetX = newOffsetX;
+    this.viewport.offsetY = newOffsetY;
     this.draw();
   }
 

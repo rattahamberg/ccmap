@@ -72,7 +72,9 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
 
   const handlePointerUp = (e: PointerEvent<HTMLCanvasElement>) => {
     isPanningRef.current = false;
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
   };
 
   return (
