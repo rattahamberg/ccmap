@@ -24,7 +24,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-export function generateLandmass(params: TerrainParams): Feature {
+export function generateLandmass(params: TerrainParams, id?: string): Feature {
   const {
     seed,
     centerX,
@@ -37,6 +37,9 @@ export function generateLandmass(params: TerrainParams): Feature {
 
   if (!Number.isFinite(seed) || !Number.isInteger(seed)) {
     throw new Error('seed must be a finite integer');
+  }
+  if (seed < -2147483648 || seed > 2147483647) {
+    throw new Error('seed must be within 32-bit signed integer range (-2147483648 to 2147483647)');
   }
   if (!Number.isFinite(radius) || radius <= 0) {
     throw new Error('radius must be a positive finite number');
@@ -70,7 +73,7 @@ export function generateLandmass(params: TerrainParams): Feature {
   }
 
   return {
-    id: `land-${seed}-${crypto.randomUUID()}`,
+    id: id ?? `land-${seed}-${crypto.randomUUID()}`,
     type: 'land',
     geometry,
     closed: true,

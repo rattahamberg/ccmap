@@ -84,6 +84,16 @@ describe('generateLandmass', () => {
     expect(() => generateLandmass(defaultParams({ seed: Infinity }))).toThrow();
   });
 
+  it('throws on seed outside 32-bit range', () => {
+    expect(() => generateLandmass(defaultParams({ seed: 2147483648 }))).toThrow();
+    expect(() => generateLandmass(defaultParams({ seed: -2147483649 }))).toThrow();
+  });
+
+  it('uses caller-provided id when given', () => {
+    const result = generateLandmass(defaultParams(), 'my-custom-id');
+    expect(result.id).toBe('my-custom-id');
+  });
+
   it('throws on non-finite center coordinates', () => {
     expect(() => generateLandmass(defaultParams({ centerX: NaN }))).toThrow();
     expect(() => generateLandmass(defaultParams({ centerY: Infinity }))).toThrow();
