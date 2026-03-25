@@ -1,5 +1,6 @@
 'use client';
 
+import type { MouseEvent } from 'react';
 import { useLayoutEffect, useRef } from 'react';
 import { CanvasRenderer } from '@/lib/canvas-renderer';
 import type { Registry } from '@/lib/registry';
@@ -55,12 +56,12 @@ export default function MapCanvas({ registry }: MapCanvasProps) {
     };
   }, [registry]);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: MouseEvent<HTMLCanvasElement>) => {
     isPanningRef.current = true;
     lastMouseRef.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {
     if (!isPanningRef.current || !rendererRef.current) return;
     const dx = e.clientX - lastMouseRef.current.x;
     const dy = e.clientY - lastMouseRef.current.y;
